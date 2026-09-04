@@ -18,6 +18,44 @@ def creatBTree(data, index):
         pNode.right = creatBTree(data, 2 * index + 2) # [2, 5, 12, 25, ...]
     return pNode 
 
+class ListNode:
+    """A standard node definition for a singly-linked list."""
+    def __init__(self, val: int = 0, next_node: Optional['ListNode'] = None):
+        self.val: int = val
+        self.next: Optional['ListNode'] = next_node
+
+    def __repr__(self) -> str:
+        """Visual helper to print the list sequence."""
+        nodes = []
+        curr = self
+        while curr:
+            nodes.append(str(curr.val))
+            curr = curr.next
+        return " -> ".join(nodes)
+
+
+def array_to_linked_list(arr: List[int]) -> Optional[ListNode]:
+    """Converts a standard Python list into a linked list structure."""
+    if not arr:
+        return None
+    
+    head = ListNode(arr[0])
+    current = head
+    for value in arr[1:]:
+        current.next = ListNode(value)
+        current = current.next
+    return head
+
+
+def linked_list_to_array(head: Optional[ListNode]) -> List[int]:
+    """Converts a linked list back into a standard Python list."""
+    result = []
+    current = head
+    while current:
+        result.append(current.val)
+        current = current.next
+    return result
+
 
 
 class Solution:
@@ -201,6 +239,266 @@ class Solution:
         self.invertTree(root.right)
         return root
 
+    #given a binary tree, count the number of good nodes - a node X in the tree is good if in the path from root to X there are no nodes with a value greater than X
+    def goodNodes(self, root: TreeNode) -> int:
+
+        def dfs(node, maxVal):
+            #if the node is None, return 0
+            if not node: return 0
+            #return 1 (node is good) if the node value is greater than the max value, else 0 whic will mean that the node is not good
+            res = 1 if node.val >= maxVal else 0
+            maxVal = max(maxVal, node.val)
+            #return the sum of the left and right subtrees
+            res += dfs(node.left, maxVal) 
+            res += dfs(node.right, maxVal)
+            return res
+
+        return dfs(root, float("-inf"))
+
+
+    #--- BACKTRACKING ---
+    #given an m x n grid of characters board and a string word, return true if word exists in the grid.
+    #word can be constructed from letters of sequentially adjacent cell, where adjacent cells are horizontally or vertically neighboring. The same letter cell may not be used more than once.
+    def wordExists(self, board: List[List[str]], word: str) -> bool:
+        ROWS, COLS = len(board), len(board[0])
+        path = set()
+
+        def dfs(row, col, char):
+            #if we finish the word, return True
+            if char == len(word):
+                return True
+            #if the row or col is out of bounds, if the char is not the same as the board, or if we have already visited this path, return False
+            if (row < 0 or col < 0 or row >= ROWS or col >= COLS or word[char] != board[row][col] or (row, col) in path):
+                return False
+            #add the current path to the path set
+            path.add((row, col))
+            #recursive call to the left, right, up and down
+            res = dfs(row + 1, col, char + 1) or dfs(row - 1, col, char + 1) or dfs(row, col + 1, char + 1) or dfs(row, col - 1, char + 1)
+            #remove the current path from the path set
+            path.remove((row, col))
+            return res
+
+        #do the deep for search
+        for r in range(ROWS):
+            for c in range(COLS):
+                if dfs(r, c, 0):
+                    return True
+                
+        #we didn't find the word, return False
+        return False
+
+
+    #given an array of nums, return all the possible permutations
+    def permutations(self, nums: List[int]) -> List[List[int]]:
+        res = []
+
+        #base case
+        if (len(nums) == 1):
+            return [nums.copy()] #can return also [nums[:]] which is a bit faster
+
+        #loop through the nums
+        for i in range(len(nums)):
+            #remove the current/first num from the nums
+            n = nums.pop(0)
+            #find the permutations of the remaining nums
+            perms = self.permutations(nums)
+
+            for p in perms:
+                #add the current num to the front of each permutation
+                p.append(n)
+            #add the permutations to the result
+            res.extend(perms)
+            #add back the current num to the nums
+            nums.append(n)
+
+        return res    
+
+
+
+
+    #given an integer array nums, return all possible subsets (the power set).
+    #the solution set must not contain duplicate subsets.
+    def subsets(self, nums: List[int]) -> List[List[int]]:
+        res = []
+
+        subset = []
+        def dfs(i):
+            #if we finish the nums, add the subset to the result
+            if i == len(nums):
+                res.append(subset.copy())
+                return
+
+            #decision to include the current num in the subset
+            subset.append(nums[i])
+            #recursive call to the left and right
+            dfs(i + 1)
+
+            #decision to exclude the current num from the subset
+            subset.pop()
+            #recursive call to the left and right
+            dfs(i + 1)
+
+        dfs(0)
+        return res
+
+
+    #--- LINKED LIST ---
+    def reorderList(self, head: ListNode) -> Optional[ListNode]:
+        #pointers
+        slow, fast = head, head.next
+        #while the fast pointer is not None
+        while fast and fast.next:
+            #move the slow pointer to the next node
+            slow = slow.next
+            #move the fast pointer to the next node (jumps two nodes)
+            fast = fast.next.next
+
+        #get the middle or close to middle node
+        #is going to be the next node to the current slow pointer position
+        second = slow.next
+        #set slow to Node
+        prev = slow.next = None
+        #we need to reverse the second half of the list
+        while second:
+            tmp = second.next
+            second.next = prev
+            prev = second
+            second = tmp
+
+        #merge the two lists
+        first, second = head, prev
+        while second:
+            tmp1, tmp2 = first.next, second.next
+            first.next = second
+            second.next = tmp1
+            first, second = tmp1, tmp2
+
+        return head
+
+    #merge two sorted linked lists and return it as a new sorted list
+    def mergeTwoLists(self, l1: ListNode, l2: ListNode) -> ListNode:
+        #dummy list
+        dummy = array_to_linked_list([None])
+        tail = dummy
+
+        #while the l1 and l2 pointers are not None
+        while l1 and l2:
+            #if the l1 value is less than the l2 value, add the l1 value to the tail
+            if l1.val < l2.val:
+                tail.next = l1
+                l1 = l1.next
+            else:   
+               #if the l1 value is greater than the l2 value, add the l2 value to the tail
+                tail.next = l2
+                l2 = l2.next
+            #move the tail to the next node
+            tail = tail.next
+
+        #check if the l1 or l2 pointers are None
+        if l1:
+            tail.next = l1
+        elif l2:
+            tail.next = l2
+
+        #return the dummy list
+        return dummy.next
+
+
+
+    #reverse a linked list
+    def reverseList(self, head: ListNode) -> ListNode:
+        #pointers
+        prev, current = None, head
+        #while the current pointer is not None
+        while current:
+            #move the current pointer to the next node
+            tmp = current.next
+            #move the current node to the prev pointer
+            current.next = prev
+            #set the prev pointer to the current node
+            prev = current
+            #set the current pointer to the next node
+            current = tmp
+        return prev
+
+
+
+    #--- DYNAMIC PROGRAMMING ---
+    def findTargetSumWays(self, nums: List[int], target: int) -> int:
+        dp = {} #(index, totalSum) -> # of ways
+
+        def backtrack(i, total):
+            #if we reach the last index
+            if i == len(nums):
+                #if the total sum is equal to the target, return 1
+                if total == target:
+                    return 1
+                else:
+                    return 0
+            #if we have already found the total sum, return the value from the dp (cache)
+            if (i, total) in dp:
+                return dp[(i, total)]
+
+            #recursive call
+            #will return the number of ways to reach the target sum
+            dp[(i, total)] = (backtrack(i + 1, total + nums[i]) + backtrack(i + 1, total - nums[i]))
+         
+            return dp[(i, total)]
+
+        return backtrack(0, 0)
+
+
+    #given a string s, find the longest palindromic substring in s
+    def longestPalindrome(self, s: str) -> str:
+        res = ""
+        resLen = 0
+
+        for i in range(len(s)):
+            #odd length
+            l,r = i, i
+            #check if the current substring is a palindrome
+            while l >= 0 and r < len(s) and s[l] == s[r]:
+                #update the length if is the longest palindrome we have found
+                if (r - l + 1) > resLen:
+                    res = s[l:r+1]
+                    resLen = r - l + 1
+                #expand the left and right
+                l -= 1
+                r += 1
+                    
+            #even length
+            l,r = i, i + 1
+            #check if the current substring is a palindrome
+            while l >= 0 and r < len(s) and s[l] == s[r]:
+                #update the length if is the longest palindrome we have found
+                if (r - l + 1) > resLen:
+                    res = s[l:r+1]
+                    resLen = r - l + 1
+                #expand the left and right
+                l -= 1
+                r += 1
+
+        return res
+
+
+    #a robot is located at the top-left corner of a m x n grid (marked 'Start' in the diagram below).
+    # the robot can only move either down or right at any point in time.
+    # the robot is trying to reach the bottom-right corner of the grid (marked 'Finish' in the diagram below).
+    # how many possible unique paths are there?
+    def uniquePaths(self, m: int, n: int) -> int:
+            row = [1] * n  #last row is always 1
+
+            for i in range(m - 1): #m - 1 because we don't need to count the last row
+                #create a new row
+                #init the new row with 1
+                newRow = [1] * n
+                for j in range(n - 2, -1, -1): #moves from bottom to top
+                    newRow[j] = newRow[j + 1] + row[j]
+                row = newRow
+            return row[0]
+
+
+
 
 #input: prices = [7, 1, 5, 3, 6, 4]
 #output: 5
@@ -247,16 +545,90 @@ print(Solution().validPerfectSquare(16))
 #the number is not a perfect square, so return False
 print(Solution().validPerfectSquare(14))
 
-
 #Input: root = [3, 9, 20, null, null, 15, 7]
 #Output: True
 #The tree is balanced
 root = creatBTree([3, 9, 20, None, None, 15, 7], 0)
 print(Solution().isBalanced(root))
 
-
 #Input: root = [1, 2, 2, 3, 3, 3, null, null, 4, 4, 4, 5, 5, 5]
 #Output: False
 #The tree is not balanced
 root = creatBTree([1, 2, 2, 3, 3, 3, None, None, 4, 4, 4, 5, 5, 5], 0)
 print(Solution().isBalanced(root))
+
+#input: root: [3, 1, 4, 3, null, 1, 5]
+#output: 4
+#Root Node: 3 (good)
+root = creatBTree([3, 1, 4, 3, None, 1, 5], 0)
+print(Solution().goodNodes(root))
+
+#input: board = [["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]], word = "ABCB"
+#output: True
+#The word exists in the grid
+print(Solution().wordExists([["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]], "ABCB"))
+
+#input: board = [["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]], word = "SEE"
+#output: False
+#The word does not exist in the grid
+print(Solution().wordExists([["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]], "SEE"))
+
+#input: nums = [1, 2, 3]
+#output: [[], [1], [2], [1, 2], [3], [1, 3], [2, 3], [1, 2, 3]]
+#the power set of the array
+print(Solution().subsets([1, 2, 3]))
+
+#input: nums = [1, 2]
+#output: [[], [1], [2], [1, 2]]
+#the power set of the array
+print(Solution().subsets([1, 2]))
+
+#input: nums = [1, 2, 3]
+#output: [[1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3]]
+#the permutations of the array
+print(Solution().permutations([1, 2, 3]))
+
+#input: nums = [1, 2]
+#output: [[1, 2], [2, 1]]
+#the permutations of the array
+print(Solution().permutations([1, 2]))
+
+#input: head = [1, 2, 3, 4]
+#output: [1,4,2,3]
+#reorder the linked list
+my_array = [1, 2, 3, 4]
+linked_list_head = array_to_linked_list(my_array)
+print(Solution().reorderList(linked_list_head))
+
+
+#input: 1 -> 2 -> 4, 1 -> 3 -> 4
+#output: 1 -> 1 -> 2 -> 3 -> 4 -> 4
+my_array2 = [1, 2, 4]
+my_array3 = [1, 3, 4]
+linked_list_head_2 = array_to_linked_list(my_array2)
+linked_list_head_3 = array_to_linked_list(my_array3)
+print(Solution().mergeTwoLists(linked_list_head_2, linked_list_head_3))
+
+
+#input: 1 -> 2 -> 3 -> 4 -> 5 -> NULL
+#output: 5 -> 4 -> 3 -> 2 -> 1 -> NULL
+my_array4 = [1, 2, 3, 4, 5, None]
+linked_list_head_4 = array_to_linked_list(my_array4)
+print(Solution().reverseList(linked_list_head_4))
+
+#input: nums = [1,1,1,1,1], target = 3
+#output: 5
+#there are 5 ways to reach the target sum
+print(Solution().findTargetSumWays([1, 1, 1, 1, 1], 3))
+
+#input: s = "babad"
+#output: "bab" and also can be "aba"
+print(Solution().longestPalindrome("babad"))
+
+#input: "cbbd"
+#outpu: "bb"
+print(Solution().longestPalindrome("cbbd"))
+
+#input: m = 3, n = 7
+#output: 28
+print(Solution().uniquePaths(3, 7))
