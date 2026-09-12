@@ -422,6 +422,38 @@ class Solution:
         return prev
 
 
+    #you are given two non-empty linked lists representing two non-negative integers. 
+    #The digits are stored in REVERSE ORDER and each of their nodes contain a single digit.
+    #Add the two numbers and return it as a linked list.
+    def addTwoNumbers(self, l1: ListNode, l2: ListNode) -> ListNode:
+        dummy = ListNode()
+        #pointer
+        curr = dummy
+        #carry is any value that is greater than 9, so we will use it to store the carry
+        carry = 0
+
+        #loop through the l1 and l2 pointers while they are not None
+        while l1 or l2:
+            #if the pointer is None, set it to 0
+            v1 = l1.val if l1 else 0
+            v2 = l2.val if l2 else 0
+           
+            #add the values
+            val = v1 + v2 + carry
+            carry = val // 10
+            val = val % 10
+            curr.next = ListNode(val)
+
+            #move the pointers
+            curr = curr.next
+            l1 = l1.next if l1 else None
+            l2 = l2.next if l2 else None
+        
+        #if the carry is not 0, add the carry to the dummy node
+        if carry:
+            curr.next = ListNode(carry)
+        return dummy.next
+
 
     #--- DYNAMIC PROGRAMMING ---
     def findTargetSumWays(self, nums: List[int], target: int) -> int:
@@ -615,6 +647,16 @@ print(Solution().mergeTwoLists(linked_list_head_2, linked_list_head_3))
 my_array4 = [1, 2, 3, 4, 5, None]
 linked_list_head_4 = array_to_linked_list(my_array4)
 print(Solution().reverseList(linked_list_head_4))
+
+
+#input: (2 -> 4 -> 3) + (5 -> 6 -> 4)
+#output: 7 -> 0 -> 8
+#explanation: 342 + 465 = 807
+my_array5 = [8, 4, 8]
+my_array6 = [8, 6, 8]
+linked_list_head_5 = array_to_linked_list(my_array5)
+linked_list_head_6 = array_to_linked_list(my_array6)
+print(Solution().addTwoNumbers(linked_list_head_5, linked_list_head_6))
 
 #input: nums = [1,1,1,1,1], target = 3
 #output: 5
